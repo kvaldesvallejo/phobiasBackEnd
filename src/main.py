@@ -75,7 +75,6 @@ def create_user():
         raise APIException("You need to specify an email", 400)
     if User.query.filter_by(email=body['email']).first() is not None:
         raise APIException("email is in use", 400)
-
     #phone_number
     if "phone_number" in body:
         phn = body["phone_number"]
@@ -83,7 +82,6 @@ def create_user():
         raise APIException("You need to specify an phone_number", 400)
     if User.query.filter_by(phone_number=body['phone_number']).first() is not None:
         raise APIException("phone_number is in use", 400)
-
     #user_name
     if "user_name" in body:
         un = body["user_name"]
@@ -91,7 +89,6 @@ def create_user():
         raise APIException("You need to specify an user_name", 400)
     if User.query.filter_by(user_name=body['user_name']).first() is not None:
         raise APIException("user name is in use", 400)
-
     #password
     if "password" in body:
         p = body["password"]
@@ -99,13 +96,11 @@ def create_user():
         raise APIException("You need to specify an password", 400)
     if User.query.filter_by(password=body['password']).first() is not None:
         raise APIException("password is in use", 400)
-
     #profile_picture
     if "profile_picture" in body:
         pp = body["profile_picture"]
     else:
         pp = "default"
-
     #account_type
     if "account_type" in body:
         at = body["account_type"]
@@ -269,7 +264,7 @@ def get_therapist(user_id):
     return jsonify(target_therapists.serialize(), 200)
 
 # Update an specific Therapist by id
-@app.route('/therapist<int:user_id>', methods=['POST'])
+@app.route('/therapist/<int:user_id>', methods=['POST'])
 def update_therapist(user_id):
 
     target_therapist = User.query.get(user_id)
@@ -362,7 +357,7 @@ def get_patient_by_id(user_id):
     return jsonify(target_patient.serialize(), 200)
 
 # Update an specific Patient by id
-@app.route('/patient<int:user_id>', methods=['POST'])
+@app.route('/patient/<int:user_id>', methods=["PUT"])
 def update_patient(user_id):
 
     target_patient = Patient.query.get(user_id)
@@ -397,6 +392,7 @@ def update_patient(user_id):
     patients = Patient.query.all()
     response_body = list(map(lambda x: x.serialize(), patients))
     return jsonify(response_body), 200
+
 
 
 # this only runs if `$ python src/main.py` is executed
