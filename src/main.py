@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Therapist , Patient
+from models import db, User, Therapist , Patient, Testimonial, PatientLesson, Question, Lesson
 
 #import cloudinary
 #import cloudinary.uploader
@@ -392,8 +392,6 @@ def update_patient(user_id):
     patients = Patient.query.all()
     response_body = list(map(lambda x: x.serialize(), patients))
     return jsonify(response_body), 200
-
-
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
