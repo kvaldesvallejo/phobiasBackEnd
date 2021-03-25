@@ -17,7 +17,6 @@ class User(db.Model):
     testimonial_photo = db.Column(db.String(500), unique=False, nullable=True)
     testimonial_date = db.Column(db.String(15), unique=False, nullable=True)
 
-
     user_therapist = db.relationship("Therapist", uselist=False, backref="user")
     user_patient = db.relationship("Patient", uselist=False, backref="user")
 
@@ -68,7 +67,6 @@ class Patient(db.Model):
     previous_help = db.Column(db.String(300), unique=False, nullable=True)
     severity = db.Column(db.String(300), unique=False, nullable=True)
 
-
     patient_lesson = db.relationship("PatientLesson", uselist=False, backref="patient")
 
     def __repr__(self):
@@ -111,6 +109,9 @@ class PatientLesson(db.Model):
             "id": self.id,
             "id_lesson": self.id_lesson,
             "id_patient" : self.id_patient,
+            "question_2_feeling": self.question_2_feeling,
+            "question_2_experience": self.question_2_experience,
+            "question_2_date": self.question_2_date,
             "actual_step" : self.actual_step
         }
 

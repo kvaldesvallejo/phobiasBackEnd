@@ -249,7 +249,7 @@ def login():
 
     expires = datetime.timedelta(days=7)
     access_token = create_access_token(identity=usercheck.id, expires_delta = expires)
-    return jsonify(access_token=access_token)
+    return jsonify(access_token=access_token), 200
 
 #-----------------Therapist-----------------------------------------------------------
 # Create a new Therapist 
@@ -670,6 +670,67 @@ def delete_patient_lesson(id):
     response_body = list(map(lambda x: x.serialize(), patient_lessons))
     return jsonify(response_body), 200
 
+# Update an specific PatientLesson
+@app.route('/patientlesson/<int:id_patient>/<int:id_lesson>', methods=["PUT"])
+def update_patient_lesson(id_patient, id_lesson):
+
+    target_patient_lesson = PatientLesson.query.filter_by(id_patient=id_patient,id_lesson=id_lesson).first()
+
+    if target_patient_lesson is None:
+        raise APIException("PatientLesson not found", 400)
+
+    body = request.get_json()
+    
+    if body is None:
+        raise APIException("You need to specify the request body as a json object", 400)
+
+    # Validations
+    #question_2_feeling
+    if "question_2_feeling" in body:
+        target_patient_lesson.question_2_feeling = body['question_2_feeling']
+
+    #question_2_experience
+    if "question_2_experience" in body:
+       target_patient_lesson.question_2_experience = body['question_2_experience']
+    
+    #question_2_date
+    if "question_2_date" in body:
+       target_patient_lesson.question_2_date = body['question_2_date']
+
+    #question_4_feeling
+    if "question_4_feeling" in body:
+        target_patient_lesson.question_4_feeling = body['question_4_feeling']
+
+    #question_4_experience
+    if "question_4_experience" in body:
+       target_patient_lesson.question_4_experience = body['question_4_experience']
+    
+    #question_4_date
+    if "question_4_date" in body:
+       target_patient_lesson.question_4_date = body['question_4_date']    
+
+    #question_5_feeling
+    if "question_5_feeling" in body:
+        target_patient_lesson.question_5_feeling = body['question_5_feeling']
+
+    #question_5_experience
+    if "question_5_experience" in body:
+       target_patient_lesson.question_5_experience = body['question_5_experience']
+    
+    #question_5_date
+    if "question_5_date" in body:
+       target_patient_lesson.question_5_date = body['question_5_date']
+
+    #actual_step
+    if "actual_step" in body:
+       target_patient_lesson.actual_step = body['actual_step']
+
+    db.session.commit()
+
+    patientLessons = PatientLesson.query.all()
+    response_body = list(map(lambda x: x.serialize(), patientLessons))
+    return jsonify(response_body), 200
+
 # Update actual_step
 @app.route('/updatestep/<int:id_p>/<int:id_l>/<int:step>', methods=['PUT'])
 def update_actual_step(id_p, id_l, step):
@@ -677,7 +738,7 @@ def update_actual_step(id_p, id_l, step):
     print("id_patient: ", id_p)
     print("id_lesson: ", id_l)
     
-    patient_lesson = PatientLesson.query.filter_by(id_patient=id_p,id_lesson=id_l).first()
+    patient_lesson = PatientLesson.query.filter_by(id_patient=id_patient,id_lesson=id_lesson).first()
 
     patient_lesson.actual_step=step
 
