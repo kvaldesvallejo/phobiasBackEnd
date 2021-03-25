@@ -9,7 +9,7 @@ class User(db.Model):
     phone_number = db.Column(db.String(300), unique=True, nullable=False)
     user_name = db.Column(db.String(300), unique=True, nullable=False)
     profile_picture = db.Column(db.String(300), nullable=True)
-     
+    account_type = db.Column(db.String(300), unique=False, nullable=True)
     email = db.Column(db.String(300), unique=True, nullable=False)
     password = db.Column(db.String(300), unique=False, nullable=False)
 
@@ -27,6 +27,7 @@ class User(db.Model):
     def serialize(self):
         return {
             "id": self.id,
+            "password" : self.password,
             "first_name" : self.first_name,
             "last_name" : self.last_name,
             "phone_number" : self.phone_number,
@@ -45,9 +46,8 @@ class User(db.Model):
 class Therapist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True)
-    ofice_location = db.Column(db.String(30), unique=False, nullable=False)
-    experience = db.Column(db.String(500), unique=False, nullable=False)
-    languages_spoke = db.Column(db.String(300), unique=False, nullable=False)
+    zipcode = db.Column(db.String(30), unique=False, nullable=True)
+    phobia = db.Column(db.String(500), unique=False, nullable=True)
 
     def __repr__(self):
         return '<Therapist %r>' % self.user_id
@@ -56,9 +56,8 @@ class Therapist(db.Model):
         return {
             "id" : self.id,
             "user_id": self.user_id,
-            "ofice_location" : self.ofice_location,
-            "experience" : self.experience,
-            "languages_spoke" : self.languages_spoke,
+            "zipcode" : self.zipcode,
+            "phobia" : self.phobia
         }
 
 class Patient(db.Model):
@@ -109,7 +108,7 @@ class PatientLesson(db.Model):
 
     def serialize(self):
         return {
-            "id": self.os,
+            "id": self.id,
             "id_lesson": self.id_lesson,
             "id_patient" : self.id_patient,
             "actual_step" : self.actual_step
@@ -117,7 +116,7 @@ class PatientLesson(db.Model):
 
 class Lesson(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(300), unique=True, nullable=False)
+    name = db.Column(db.String(300), unique=False, nullable=False)
     phobia_description = db.Column(db.String(500), unique=False, nullable=False)
 
     description_1 = db.Column(db.String(500), unique=False, nullable=False)

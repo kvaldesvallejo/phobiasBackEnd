@@ -2,6 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
+import datetime 
 from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
 from flask_swagger import swagger
@@ -9,6 +10,11 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Therapist , Patient, PatientLesson, Lesson
+
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
 
 import cloudinary
 import cloudinary.uploader
@@ -28,6 +34,10 @@ MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
 setup_admin(app)
+
+# Setup the Flask-JWT-Extended extension
+app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this!
+jwt = JWTManager(app)
 
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
@@ -149,8 +159,10 @@ def get_users():
 
 # Get an specific user by id 
 @app.route('/user/<int:user_id>', methods=['GET'])
+#@jwt_required()
 def get_user_by_id(user_id):
     
+    #user_id = get_jwt_identity()
     target_user = User.query.get(user_id)
     if target_user is None:
         raise APIException("User not found", 400)
@@ -225,6 +237,20 @@ def handle_single_user(user_id):
     response_body = list(map(lambda x: x.serialize(), users))
     return jsonify(response_body), 200
 
+# Create a route to authenticate your users and return JWTs. The
+# create_access_token() function is used to actually generate the JWT.
+@app.route("/login", methods=["POST"])
+def login():
+    username = request.json.get("user_name", None)
+    password = request.json.get("password", None)
+    usercheck = User.query.filter_by(user_name=username, password=password).first()
+    if usercheck == None:
+        return jsonify({"msg": "Bad username or password"}), 401
+
+    expires = datetime.timedelta(days=7)
+    access_token = create_access_token(identity=usercheck.id, expires_delta = expires)
+    return jsonify(access_token=access_token)
+
 #-----------------Therapist-----------------------------------------------------------
 # Create a new Therapist 
 @app.route('/therapist', methods=['POST'])
@@ -240,26 +266,20 @@ def create_therapist():
         ui = body["user_id"]
     else:
         raise APIException("You need to specify an user_id", 400)
-    #ofice_location
-    if "ofice_location" in body:
-        ol = body["ofice_location"]
+    #zipcode
+    if "zipcode" in body:
+        ol = body["zipcode"]
     else:
-        raise APIException("You need to specify an ofice_location", 400)
-    #experience
-    if "experience" in body:
-        e = body["experience"]
+        raise APIException("You need to specify an zipcode", 400)
+    #phobia
+    if "phobia" in body:
+        e = body["phobia"]
     else:
         e = "default"
-    #languages_spoke
-    if "languages_spoke" in body:
-        ls = body["languages_spoke"]
-    else:
-        raise APIException("You need to specify the languages_spoke", 400)
 
     new_therapist = Therapist(user_id = ui, 
-                    ofice_location = ol, 
-                    experience = e, 
-                    languages_spoke = ls)
+                    zipcode = ol, 
+                    phobia = e)
 
     print(new_therapist)
 
@@ -305,17 +325,13 @@ def update_therapist(user_id):
     if "user_id" in body:
         target_therapist.user_id = body['user_id']
     
-    #ofice_location
-    if "ofice_location" in body:
-       target_therapist.ofice_location = body['ofice_location']
+    #zipcode
+    if "zipcode" in body:
+       target_therapist.zipcode = body['zipcode']
     
-    #experience
-    if "experience" in body:
-        target_therapist.experience = body['experience']
-   
-    #languages_spoke
-    if "languages_spoke" in body:
-        target_therapist.languages_spoke = body['languages_spoke']
+    #phobia
+    if "phobia" in body:
+        target_therapist.phobia = body['phobia']
 
     db.session.commit()
 
@@ -536,7 +552,7 @@ def get_patient_lesson():
     response_body = list(map(lambda x: x.serialize(), patientlessons))
     return jsonify(response_body), 200
 
-# Create a new Lesson 
+# Create a new PatientLesson 
 @app.route('/patientlesson', methods=['POST'])
 def create_patient_lesson():
 
@@ -614,7 +630,7 @@ def create_patient_lesson():
     else:
         ast = 0
     
-    new_patient_lesson = PatientLesson(name = n, 
+    new_patient_lesson = PatientLesson(
                     id_lesson = il, 
                     id_patient = ip, 
                     question_2_feeling = q2f,
@@ -635,6 +651,51 @@ def create_patient_lesson():
     new_patient_lessons = PatientLesson.query.all()
     response_body = list(map(lambda x: x.serialize(), new_patient_lessons))
     return jsonify(response_body), 200
+
+# Delete a PatientLesson by id
+@app.route('/patientlesson/<int:id>', methods=['DELETE'])
+def delete_patient_lesson(id):
+
+    # body = request.get_json()
+    # if "id" in body:
+    #     id = body["id"]
+    # else:
+    #     raise APIException("You need to specify the id", 400)
+    patientlesson = PatientLesson.query.get(id)
+
+    db.session.delete(patientlesson)
+    db.session.commit()
+
+    patient_lessons = PatientLesson.query.all()
+    response_body = list(map(lambda x: x.serialize(), patient_lessons))
+    return jsonify(response_body), 200
+
+# Update actual_step
+@app.route('/updatestep/<int:id_p>/<int:id_l>/<int:step>', methods=['PUT'])
+def update_actual_step(id_p, id_l, step):
+
+    print("id_patient: ", id_p)
+    print("id_lesson: ", id_l)
+    
+    patient_lesson = PatientLesson.query.filter_by(id_patient=id_p,id_lesson=id_l).first()
+
+    patient_lesson.actual_step=step
+
+    db.session.commit()
+
+    update_patient_lesson = PatientLesson.query.filter_by(id_patient=id_p,id_lesson=id_l).first()
+
+    print("patient_lesson: " ,update_patient_lesson)
+
+    return jsonify(update_patient_lesson.serialize()), 200
+
+# Get actual_step Lesson by Patient
+@app.route('/steplessonsbypatient/<int:patient_id>/<int:lesson_id>', methods=['POST'])
+def get_step_leson_by_patient():
+    
+    patient_lesson = PatientLesson.query.filter_by(id_lesson= lesson_id )
+
+    return jsonify(patient_lesson.serialize(), 200)
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
