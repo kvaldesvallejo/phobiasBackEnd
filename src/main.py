@@ -170,7 +170,7 @@ def get_user_by_id(user_id):
     return jsonify(target_user.serialize(), 200)
 
 # Update an specific user by id 
-@app.route('/user/<int:user_id>', methods=['POST'])
+@app.route('/user/<int:user_id>', methods=['PUT'])
 def handle_single_user(user_id):
 
     target_user = User.query.get(user_id)
@@ -211,28 +211,64 @@ def handle_single_user(user_id):
     #password
     if "password" in body:
         target_user.password = body["password"]
-    
-    #profile_picture
-    if "profile_picture" in body:
-        
-        target_user.profile_picture = request.FILES["profile_picture"]
-        print("_______________________")
-        print(request.files["profile_picture"])
-        picture_uploaded = cloudinary.uploader.upload(target_user.profile_picture)
-       
-            #options = {
-                #        “use_filename”: True  # use filename as public id on cloudinary
-                #    })
-        target_user.profile_picture = picture_uploaded['secure_url']
-    else:
-        print("******************************************")
 
     #account_type
     if "account_type" in body:
         target_user.account_type = body["account_type"]
-                        
+
+    #testimonial_desciption
+    if "testimonial_desciption" in body:
+        target_user.testimonial_desciption = body["testimonial_desciption"]
+        print("testimonial_desciption ", target_user.testimonial_desciption)
+    #testimonial_photo
+    if "testimonial_photo" in body:
+        target_user.testimonial_photo = body["testimonial_photo"]
+    #testimonial_date
+    if "testimonial_date" in body:
+        target_user.testimonial_date = body["testimonial_date"]
+                       
     db.session.commit()
             
+    users = User.query.all()
+    response_body = list(map(lambda x: x.serialize(), users))
+    return jsonify(response_body), 200
+
+# Update the profile_picture user by id 
+@app.route('/profile_picture/<int:user_id>', methods=['POST'])
+def update_profile_picture(user_id):
+
+    #profile_picture
+    if "profile_picture" in request.files:
+        result = cloudinary.uploader.upload(request.files['profile_picture'])
+        #target_user.profile_picture = request.FILES["profile_picture"]
+        print("_______________________")
+        print(request.files["profile_picture"])
+        #picture_uploaded = cloudinary.uploader.upload(target_user.profile_picture)
+       
+            #options = {
+                #        “use_filename”: True  # use filename as public id on cloudinary
+                #    })
+        target_user = User.query.get(user_id)
+        target_user.profile_picture = result['secure_url']
+    else:
+        print("******************************************")
+
+    db.session.commit()
+            
+    users = User.query.all()
+    response_body = list(map(lambda x: x.serialize(), users))
+    return jsonify(response_body), 200
+
+# Delete an specific user by id 
+@app.route('/user/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+
+    user = User.query.get(user_id)
+    if user is None:
+        raise APIException('User not found', status_code=404)
+    db.session.delete(user)
+    db.session.commit()
+
     users = User.query.all()
     response_body = list(map(lambda x: x.serialize(), users))
     return jsonify(response_body), 200
@@ -247,9 +283,12 @@ def login():
     if usercheck == None:
         return jsonify({"msg": "Bad username or password"}), 401
 
+    return_user = usercheck.serialize()
     expires = datetime.timedelta(days=7)
     access_token = create_access_token(identity=usercheck.id, expires_delta = expires)
-    return jsonify(access_token=access_token), 200
+
+    print(return_user)
+    return jsonify({"access_token":access_token, "currentUser":return_user}), 200
 
 #-----------------Therapist-----------------------------------------------------------
 # Create a new Therapist 
@@ -286,9 +325,11 @@ def create_therapist():
     db.session.add(new_therapist)
     db.session.commit()
 
-    therapists = Therapist.query.all()
-    response_body = list(map(lambda x: x.serialize(), therapists))
-    return jsonify(response_body), 200
+    target_therapists = Therapist.query.get(ui)
+    if target_therapists is None:
+        raise APIException("User not found", 400)
+
+    return jsonify(target_therapists.serialize(), 200)
        
 # Get all Therapist
 @app.route('/therapist', methods=['GET'])
@@ -377,9 +418,12 @@ def create_patient():
     db.session.add(new_patient)
     db.session.commit()
 
-    patients = Patient.query.all()
-    response_body = list(map(lambda x: x.serialize(), patients))
-    return jsonify(response_body), 200
+    # target_patient = Patient.query.get(ui)
+    # if target_patient is None:
+    #     raise APIException("User not found", 400)
+
+    print(new_patient.serialize())
+    return jsonify(new_patient.serialize(), 200)
 
 # Get all Patient
 @app.route('/patient', methods=['GET'])
@@ -391,7 +435,9 @@ def get_patients():
 # Get an specific Patient by id 
 @app.route('/patient/<int:user_id>', methods=['GET'])
 def get_patient_by_id(user_id):
-    target_patient = Patient.query.get(user_id)
+    ui = user_id
+    #user = User.query.filter_by(email=e).first()
+    target_patient = Patient.query.filter_by(user_id = ui).first()
     if target_patient is None:
         raise APIException("User not found", 400)
 

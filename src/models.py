@@ -35,10 +35,10 @@ class User(db.Model):
             "email": self.email,
             "testimonial_desciption": self.testimonial_desciption,
             "testimonial_date": self.testimonial_date,
-            "profile_picture": self.profile_picture
+            "profile_picture": self.profile_picture,
 
             #"user_therapist": self.user_therapist.serialize() if self.therapist else None,
-            #"user_patient": self.user_patient.serialize() if not self.therapist else None,
+            #"user_patient": self.user_patient.serialize() if not self.user_therapist else None,
             # do not serialize the password, its a security breach
         }
 
@@ -67,7 +67,7 @@ class Patient(db.Model):
     previous_help = db.Column(db.String(300), unique=False, nullable=True)
     severity = db.Column(db.String(300), unique=False, nullable=True)
 
-    patient_lesson = db.relationship("PatientLesson", uselist=False, backref="patient")
+    patient_lesson = db.relationship("PatientLesson", uselist=True, backref="patient")
 
     def __repr__(self):
         return '<Patient %r>' % self.user_id
